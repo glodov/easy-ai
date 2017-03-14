@@ -1,8 +1,11 @@
 <?php
 
+require __DIR__ . '/..' . '/vendor/autoload.php';
+
 use EasyAI\Pattern;
 use EasyAI\Stack;
-use PHPHtmlParser\Dom;
+use EasyAI\Examples\Actor;
+use EasyAI\Examples\Film;
 
 
 // Create patterns
@@ -12,7 +15,10 @@ $films = new Stack;
 $actors = new Stack;
 
 // here we add random url of first movie to start with its actors
-$films->add('https://www.kinopoisk.ru/film/932068/');
+$baseUrl = 'http://www.imdb.com/title/tt0330373';
+$baseUrl = 'http://www.imdb.com/title/tt2771200';
+$films->add($baseUrl, new Film);
+
 
 $count = 300;
 while ($count > 0) {
@@ -30,18 +36,17 @@ while ($count > 0) {
 		$film = $films->pop();
 
 		// downloading list of actors from film webpage
-		// $dom = new Dom;
-		// $dom->loadFromUrl($film->url);
 		$film->download();
+
+		printf("Downloading film: %s\n", $film->title);
 
 		// taking only top 10 actors from every film
 		foreach ($film->findActors(10) as $actor) {
+			printf("Downloading actor: %-30s %s\n", $actor->name, $actor->id);
+			$actor->download();
 			$actors->add($actor);
 
-			// foreach ($actor->findFilms() as $film) {
-			// 	// adding films into it's stack, it will add only new films
-			// 	$films->add($film->url);
-			// }
+			print((string) $actor);
 		}
 
 		// complete current film item
@@ -51,8 +56,5 @@ while ($count > 0) {
 		printf("Film %s added ..\n", $film->title);
 		continue;
 	}
-
-	$dom = new Dom;
-	$dom->loadFromUrl('http://google.com');
-	$html = $dom->outerHtml;
+	$count--;
 }

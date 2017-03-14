@@ -1,7 +1,7 @@
 <?php
 namespace EasyAI;
 
-use PHPHtmlParser\Dom;
+use Gilbitron\Util\SimpleCache;
 
 class StackItem
 {
@@ -13,11 +13,13 @@ class StackItem
 	public $title;
 	public $state;
 
-	public function __construct($url)	
+	public function __construct($url = null)	
 	{
-		$this->url   = $url;
-		$this->hash  = substr(md5($url), 0, 10);
-		$this->state = self::WAIT;
+		if (null !== $url) {
+			$this->url   = rtrim($url, '/');
+			$this->hash  = substr(md5($url), 0, 10);
+			$this->state = self::WAIT;			
+		}
 	}
 
 	public function hasDone()
@@ -35,15 +37,31 @@ class StackItem
 		$this->status = self::DONE;
 	}
 
-	protected function getDom()
+	protected function getDom($url = null)
 	{
+		$cache = new SimpleCache;
+		$cache->cache_path = 'cache/';
+		$cache->cache_time = 3600;
+
+		$url = null === $url ? $this->url : $url;
 		$dom = new Dom;
-		$dom->loadFromUrl($this->url);
+
+		if ($data = $cache->get_cache($url)) {
+			$dom->load($data);
+		} else {
+			$dom->loadFromUrl($url);
+			$cache->set_cache($url, $dom->getRawContent());
+		}
 		return $dom;
 	}
 
 	public function download()
 	{
 		$dom = $this->getDom();
+		$element = $dom->find('head > title')[0];
+
+		$this->title = $element->text;
+
+		return $dom;
 	}
 }

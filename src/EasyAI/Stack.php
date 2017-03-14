@@ -21,9 +21,23 @@ class Stack
 	 * @param string $url The url of the endpoint.
 	 * @return StackItem The new object to work with, or FALSE if object done already.
 	 */
-	public function add($url)
+	public function add($url, StackItem $itemClass = null)
 	{
-		$item = new StackItem($url);
+		$item = null;
+		if ($url instanceof StackItem) {
+			$item = $url;
+		} else {
+			if ($itemClass) {
+				$name = get_class($itemClass);
+				$item = new $name($url);
+			} else {
+				$item = new StackItem($url);
+			}
+		}
+
+		if (!$item) {
+			return false;
+		}
 
 		if (isset($this->done[$item->hash])) {
 			return false;
@@ -58,24 +72,25 @@ class Stack
 	 * so we can easily return [first in] item.
 	 * 
 	 * @access public
-	 * @return StackItem The item if exists and FALSE if not.
+	 * @return StackItem The item if exists (at least one) and FALSE if not.
 	 */
 	public function pop()
 	{
 		if (count($this->open)) {
-			return 
+			return reset($this->open);
 		}
+		return false;
 	}
 
-	private function length()
+	/**
+	 * Return count of open items.
+	 * 
+	 * @access public
+	 * @return int The count.
+	 */
+	public function length()
 	{
-		$length = 0;
-		foreach ($this->data as $hash => $item) {
-			if ($item->isWaiting()) {
-				$length++;
-			}
-		}
-		return $length;
+		return count($this->open);
 	}
 
 }
